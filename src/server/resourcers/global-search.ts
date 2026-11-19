@@ -1,4 +1,9 @@
 import { Context, Next } from '@nocobase/actions';
+import { searchCollectionWithAcl } from '../utils/search-with-acl';
+import { assertSafeSearchField, isSafeUrlTemplate } from '../utils/validate-config';
+
+const MIN_QUERY_LENGTH = 2;
+const MAX_CONFIGS = 50;
 
 export default {
   name: 'globalSearch',
@@ -6,17 +11,16 @@ export default {
     async search(ctx: Context, next: Next) {
       const { q } = ctx.action.params;
 
-      if (!q || String(q).trim().length < 2) {
-        // Set a plain array — dataWrapping middleware will wrap it to { data: [] }
+      if (!q || String(q).trim().length < MIN_QUERY_LENGTH) {
         ctx.body = [];
         return next();
       }
 
       const query = String(q).trim();
 
-      // Load all enabled search configs
       const configs = await ctx.db.getRepository('globalSearchConfigs').find({
         filter: { enabled: true },
+        limit: MAX_CONFIGS,
       });
 
       if (!configs.length) {
@@ -24,23 +28,28 @@ export default {
         return next();
       }
 
-      // Query each configured collection in parallel
       const resultSets = await Promise.all(
         configs.map(async (config) => {
-          const collectionName: string = config.get('collectionName') as string;
-          const searchField: string = (config.get('searchField') as string) || 'name';
-          const displayName: string = (config.get('displayName') as string) || collectionName;
-          const urlTemplate: string = (config.get('urlTemplate') as string) || '';
+          const collectionName = String(config.get('collectionName') || '');
+          const searchField = String(config.get('searchField') || 'name');
+          const displayName = String(config.get('displayName') || collectionName);
+          let urlTemplate = String(config.get('urlTemplate') || '');
+
+          // Never return unsafe templates to the client
+          if (!isSafeUrlTemplate(urlTemplate)) {
+            urlTemplate = '';
+          }
 
           try {
-            const repo = ctx.db.getRepository(collectionName);
-            if (!repo) {
+            assertSafeSearchField(searchField);
+            if (!collectionName || collectionName.startsWith('_')) {
               return [];
             }
 
-            const rows = await repo.find({
-              filter: { [searchField]: { $includes: query } },
-              limit: 20,
+            const rows = await searchCollectionWithAcl(ctx, {
+              collectionName,
+              searchField,
+              query,
             });
 
             return rows.map((row) => ({
@@ -51,13 +60,12 @@ export default {
               urlTemplate,
             }));
           } catch {
-            // Collection may not exist yet or field may be invalid — skip gracefully
+            // Missing collection/field, ACL parse errors, etc. — skip quietly
             return [];
           }
         }),
       );
 
-      // Set a plain array — dataWrapping middleware wraps it to { data: [...] }
       ctx.body = resultSets.flat();
       return next();
     },

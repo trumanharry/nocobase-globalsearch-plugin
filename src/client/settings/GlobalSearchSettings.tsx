@@ -36,8 +36,8 @@ interface CollectionOption {
 
 const URL_TEMPLATE_HELP = (
   <span>
-    URL opened when "View Record" is clicked. Use <code>{'{id}'}</code> as a placeholder for the record's primary key
-    and <code>{'{collectionName}'}</code> for the collection name.
+    Relative path opened when "View Record" is clicked (must start with <code>/</code>; external URLs are not allowed).
+    Use <code>{'{id}'}</code> for the record primary key and <code>{'{collectionName}'}</code> for the collection name.
     <br />
     Example: <code>/admin/some-page-id?popupuid={'{id}'}</code>
   </span>
@@ -293,7 +293,13 @@ export const GlobalSearchSettings: React.FC = () => {
           <Form.Item
             name="searchField"
             label="Search Field"
-            rules={[{ required: true, message: 'Please enter a field name' }]}
+            rules={[
+              { required: true, message: 'Please enter a field name' },
+              {
+                pattern: /^[A-Za-z_][A-Za-z0-9_]*$/,
+                message: 'Use a simple field name (letters, numbers, underscore)',
+              },
+            ]}
             tooltip="The field on this collection that will be queried with a LIKE/contains search."
           >
             <Input placeholder="name" />
@@ -309,6 +315,22 @@ export const GlobalSearchSettings: React.FC = () => {
                 </Tooltip>
               </Space>
             }
+            rules={[
+              {
+                validator: async (_, value) => {
+                  if (!value) {
+                    return;
+                  }
+                  const text = String(value).trim();
+                  if (!text.startsWith('/') || text.startsWith('//')) {
+                    throw new Error('URL template must be a relative path starting with "/"');
+                  }
+                  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(text)) {
+                    throw new Error('External URLs are not allowed');
+                  }
+                },
+              },
+            ]}
           >
             <Input placeholder="/admin/your-page-id?popupuid={id}" />
           </Form.Item>

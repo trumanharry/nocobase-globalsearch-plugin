@@ -12,19 +12,26 @@ A custom [NocoBase](https://www.nocobase.com/) plugin that adds a global cross-c
 
 ## Compatibility
 
-| Plugin version | NocoBase version |
-|---|---|
-| 2.1.0 | **2.2.x** (tested toolchain: 2.2.47; also for 2.2.18 → latest) |
-| 2.0.0 | 2.0.41+ |
+| Plugin version | NocoBase version | Notes |
+|---|---|---|
+| **2.1.1** | **2.2.x** | Security hardening: ACL-aware search, settings locked to admin snippet, safe URL templates |
+| 2.1.0 | 2.2.x | Live search results |
+| 2.0.0 | 2.0.41+ | Initial release |
 
 > Rebuild against a 2.2.x toolchain so `dist/externalVersion.js` satisfies the Plugin Manager dependency check on 2.2 hosts.
 
+### Security notes (2.1.1+)
+
+- Search results respect each user's **list/view** permission and **data scopes** on target collections.
+- Managing search configs requires the `pm.plugin-global-search.settings` permission (Settings → Global Search).
+- `urlTemplate` values must be relative paths (e.g. `/admin/...`); external URLs are rejected.
+
 ## Installation (production)
 
-1. Download the `.tgz` from the latest [GitHub Actions artifact](../../actions) or [Releases](../../releases).
-2. In NocoBase: **Settings → Plugin Manager → Add → Upload local plugin**.
-3. Activate the plugin (or upgrade over the previous version).
-4. Hard refresh the browser (`Ctrl+Shift+R` / `Cmd+Shift+R`).
+1. Download the latest `.tgz` from [GitHub Actions](../../actions) or [Releases](../../releases) (e.g. `plugin-global-search-2.1.1.tgz`).
+2. In NocoBase: **Settings → Plugin Manager → Add → Upload local plugin** (upgrade over the previous version; do not remove first).
+3. Activate if needed, then hard refresh (`Ctrl+Shift+R` / `Cmd+Shift+R`).
+4. Ensure admin roles that should manage search configs have access to **Settings → Global Search**.
 
 ## Build via GitHub Actions (recommended — no local yarn install)
 
