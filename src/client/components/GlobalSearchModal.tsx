@@ -1,7 +1,10 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Modal, Input, Table, Button, Space, Typography, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useAPIClient } from '@nocobase/client';
+
+const MIN_QUERY_LENGTH = 2;
+const DEBOUNCE_MS = 300;
 
 interface SearchResult {
   id: string | number;
@@ -18,40 +21,75 @@ interface Props {
 
 export const GlobalSearchModal: React.FC<Props> = ({ open, onClose }) => {
   const api = useAPIClient();
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const inputRef = useRef<any>(null);
+  const requestIdRef = useRef(0);
 
-  const handleSearch = useCallback(
-    async (q: string) => {
-      const query = q?.trim();
-      if (!query || query.length < 2) return;
+  const runSearch = useCallback(
+    async (raw: string) => {
+      const nextQuery = raw?.trim() ?? '';
+      if (!nextQuery || nextQuery.length < MIN_QUERY_LENGTH) {
+        requestIdRef.current += 1;
+        setResults([]);
+        setSearched(false);
+        setLoading(false);
+        return;
+      }
+
+      const requestId = ++requestIdRef.current;
       setLoading(true);
       setSearched(true);
       try {
         const res = await api.request({
           url: 'globalSearch:search',
           method: 'GET',
-          params: { q: query },
+          params: { q: nextQuery },
         });
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
         // NocoBase's dataWrapping middleware wraps ctx.body in { data: ... },
         // so the array lives at res.data.data. Guard with Array.isArray so that
         // a mis-shaped response never passes a non-array to the Table's dataSource.
         const payload = res?.data?.data;
         setResults(Array.isArray(payload) ? payload : []);
       } catch {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
         setResults([]);
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     },
     [api],
   );
 
-  const handleClose = () => {
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      runSearch(query);
+    }, DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [open, query, runSearch]);
+
+  const resetState = () => {
+    requestIdRef.current += 1;
+    setQuery('');
     setResults([]);
     setSearched(false);
+    setLoading(false);
+  };
+
+  const handleClose = () => {
+    resetState();
     onClose();
   };
 
@@ -106,9 +144,7 @@ export const GlobalSearchModal: React.FC<Props> = ({ open, onClose }) => {
       destroyOnClose
       afterOpenChange={(visible) => {
         if (visible) {
-          // Reset state each time the modal opens
-          setResults([]);
-          setSearched(false);
+          resetState();
           setTimeout(() => inputRef.current?.focus(), 100);
         }
       }}
@@ -116,11 +152,13 @@ export const GlobalSearchModal: React.FC<Props> = ({ open, onClose }) => {
       <Space direction="vertical" style={{ width: '100%' }} size="middle">
         <Input.Search
           ref={inputRef}
+          value={query}
           placeholder="Search across collections… (minimum 2 characters)"
           enterButton="Search"
           loading={loading}
-          onSearch={handleSearch}
           allowClear
+          onChange={(event) => setQuery(event.target.value)}
+          onSearch={runSearch}
         />
         {searched && (
           <Table<SearchResult>
