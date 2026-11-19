@@ -3,37 +3,6 @@ import type { Database } from '@nocobase/database';
 const FIELD_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const COLLECTION_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-/** Relative admin paths only — blocks schemes, protocol-relative, and javascript: URLs. */
-export function isSafeUrlTemplate(template: unknown): boolean {
-  if (template == null || template === '') {
-    return true;
-  }
-  if (typeof template !== 'string') {
-    return false;
-  }
-  const value = template.trim();
-  if (!value.startsWith('/')) {
-    return false;
-  }
-  if (value.startsWith('//')) {
-    return false;
-  }
-  if (/[\r\n\0]/.test(value)) {
-    return false;
-  }
-  // Reject anything that still looks like a scheme after the leading slash edge cases
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value)) {
-    return false;
-  }
-  return true;
-}
-
-export function assertSafeUrlTemplate(template: unknown) {
-  if (!isSafeUrlTemplate(template)) {
-    throw new Error('urlTemplate must be a relative path starting with "/" (no external URLs)');
-  }
-}
-
 export function assertSafeSearchField(searchField: unknown) {
   if (typeof searchField !== 'string' || !FIELD_NAME_RE.test(searchField)) {
     throw new Error('searchField must be a simple field name (letters, numbers, underscore)');
@@ -71,9 +40,6 @@ export function validateSearchConfigValues(values: Record<string, unknown>, db: 
   }
   if (values.searchField !== undefined) {
     assertSafeSearchField(values.searchField);
-  }
-  if (values.urlTemplate !== undefined) {
-    assertSafeUrlTemplate(values.urlTemplate);
   }
   const collectionName = values.collectionName as string | undefined;
   const searchField = (values.searchField as string | undefined) || 'name';

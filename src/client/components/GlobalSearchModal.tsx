@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Modal, Input, Table, Button, Space, Typography, Tag, message } from 'antd';
+import { Modal, Input, Table, Button, Space, Typography, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useAPIClient } from '@nocobase/client';
 
@@ -17,39 +17,6 @@ interface SearchResult {
 interface Props {
   open: boolean;
   onClose: () => void;
-}
-
-/** Only allow same-origin relative paths (leading single slash). */
-function isSafeRelativeUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') {
-    return false;
-  }
-  const value = url.trim();
-  if (!value.startsWith('/') || value.startsWith('//')) {
-    return false;
-  }
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value)) {
-    return false;
-  }
-  if (/[\r\n\0]/.test(value)) {
-    return false;
-  }
-  return true;
-}
-
-function buildUrl(record: SearchResult): string {
-  return record.urlTemplate
-    .replace(/\{id\}/g, String(record.id))
-    .replace(/\{collectionName\}/g, record.collectionName);
-}
-
-function openRecord(record: SearchResult) {
-  const url = buildUrl(record);
-  if (!isSafeRelativeUrl(url)) {
-    message.error('This record link is not allowed');
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 export const GlobalSearchModal: React.FC<Props> = ({ open, onClose }) => {
@@ -126,6 +93,12 @@ export const GlobalSearchModal: React.FC<Props> = ({ open, onClose }) => {
     onClose();
   };
 
+  const buildUrl = (record: SearchResult): string => {
+    return record.urlTemplate
+      .replace(/\{id\}/g, String(record.id))
+      .replace(/\{collectionName\}/g, record.collectionName);
+  };
+
   const columns: ColumnsType<SearchResult> = [
     {
       title: 'Name',
@@ -146,14 +119,13 @@ export const GlobalSearchModal: React.FC<Props> = ({ open, onClose }) => {
       width: 140,
       render: (_, record) => {
         const url = buildUrl(record);
-        const safe = isSafeRelativeUrl(url);
         return (
           <Button
             type="primary"
             size="small"
             style={{ background: '#52c41a', borderColor: '#52c41a' }}
-            disabled={!safe}
-            onClick={() => openRecord(record)}
+            disabled={!url}
+            onClick={() => window.open(url, '_blank')}
           >
             View Record
           </Button>

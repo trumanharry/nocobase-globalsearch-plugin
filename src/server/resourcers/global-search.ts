@@ -1,6 +1,6 @@
 import { Context, Next } from '@nocobase/actions';
 import { searchCollectionWithAcl } from '../utils/search-with-acl';
-import { assertSafeSearchField, isSafeUrlTemplate } from '../utils/validate-config';
+import { assertSafeSearchField } from '../utils/validate-config';
 
 const MIN_QUERY_LENGTH = 2;
 const MAX_CONFIGS = 50;
@@ -33,12 +33,7 @@ export default {
           const collectionName = String(config.get('collectionName') || '');
           const searchField = String(config.get('searchField') || 'name');
           const displayName = String(config.get('displayName') || collectionName);
-          let urlTemplate = String(config.get('urlTemplate') || '');
-
-          // Never return unsafe templates to the client
-          if (!isSafeUrlTemplate(urlTemplate)) {
-            urlTemplate = '';
-          }
+          const urlTemplate = String(config.get('urlTemplate') || '');
 
           try {
             assertSafeSearchField(searchField);
