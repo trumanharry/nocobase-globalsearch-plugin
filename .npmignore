@@ -1,7 +1,9 @@
 /node_modules
 /src
-/.github
-/scripts
+/release
 *.tgz
 *.log
 .DS_Store
+.git
+.gitignore
+CHANGELOG.md

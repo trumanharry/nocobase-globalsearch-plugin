@@ -28,20 +28,50 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var server_exports = {};
 __export(server_exports, {
   PluginGlobalSearchServer: () => PluginGlobalSearchServer,
+  SETTINGS_SNIPPET: () => SETTINGS_SNIPPET,
   default: () => server_default
 });
 module.exports = __toCommonJS(server_exports);
 var import_server = require("@nocobase/server");
 var import_global_search = __toESM(require("./resourcers/global-search"));
+var import_validate_config = require("./utils/validate-config");
+const SETTINGS_SNIPPET = "pm.plugin-global-search.settings";
 class PluginGlobalSearchServer extends import_server.Plugin {
   async load() {
     this.app.resourceManager.define(import_global_search.default);
     this.app.acl.allow("globalSearch", "search", "loggedIn");
-    this.app.acl.allow("globalSearchConfigs", ["list", "get", "create", "update", "destroy"], "loggedIn");
+    this.app.acl.registerSnippet({
+      name: SETTINGS_SNIPPET,
+      actions: ["globalSearchConfigs:*"]
+    });
+    this.app.acl.use(
+      async (ctx, next) => {
+        var _a, _b;
+        const resourceName = ((_a = ctx.permission) == null ? void 0 : _a.resourceName) || ((_b = ctx.action) == null ? void 0 : _b.resourceName);
+        if (resourceName !== "globalSearchConfigs") {
+          return next();
+        }
+        const roles = this.app.acl.getRoles(ctx.state.currentRoles || [ctx.state.currentRole]);
+        const allowed = roles.some(
+          (role) => role.name === "root" || role.effectiveSnippets().allowed.includes(SETTINGS_SNIPPET)
+        );
+        if (!allowed) {
+          ctx.throw(403, "No permissions");
+        }
+        await next();
+      },
+      { before: "core" }
+    );
+    const validateModel = async (model) => {
+      (0, import_validate_config.validateSearchConfigValues)(model.get(), this.db);
+    };
+    this.db.on("globalSearchConfigs.beforeCreate", validateModel);
+    this.db.on("globalSearchConfigs.beforeUpdate", validateModel);
   }
 }
 var server_default = PluginGlobalSearchServer;
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  PluginGlobalSearchServer
+  PluginGlobalSearchServer,
+  SETTINGS_SNIPPET
 });
