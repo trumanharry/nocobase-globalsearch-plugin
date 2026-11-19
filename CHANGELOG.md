@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.3
+
+- Allow hyphens in **Search Field** names (e.g. `company-name`).
+
 ## 2.1.2
 
 - Restore original **View Record** URL behavior (absolute `https://…` templates allowed again).

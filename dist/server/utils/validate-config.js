@@ -23,11 +23,11 @@ __export(validate_config_exports, {
   validateSearchConfigValues: () => validateSearchConfigValues
 });
 module.exports = __toCommonJS(validate_config_exports);
-const FIELD_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const FIELD_NAME_RE = /^[A-Za-z_][A-Za-z0-9_-]*$/;
 const COLLECTION_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 function assertSafeSearchField(searchField) {
   if (typeof searchField !== "string" || !FIELD_NAME_RE.test(searchField)) {
-    throw new Error("searchField must be a simple field name (letters, numbers, underscore)");
+    throw new Error("searchField must be a simple field name (letters, numbers, underscore, hyphen)");
   }
   if (searchField.startsWith("$")) {
     throw new Error("searchField must not be an operator");

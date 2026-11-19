@@ -4,7 +4,7 @@
   "displayName.zh-CN": "全局搜索",
   "description": "Cross-collection global search for the NocoBase admin UI",
   "description.zh-CN": "NocoBase 管理界面的跨集合全局搜索",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "main": "dist/server/index.js",
   "nocobase": {
     "supportedVersions": [

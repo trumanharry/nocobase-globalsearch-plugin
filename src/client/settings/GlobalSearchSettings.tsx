@@ -296,8 +296,8 @@ export const GlobalSearchSettings: React.FC = () => {
             rules={[
               { required: true, message: 'Please enter a field name' },
               {
-                pattern: /^[A-Za-z_][A-Za-z0-9_]*$/,
-                message: 'Use a simple field name (letters, numbers, underscore)',
+                pattern: /^[A-Za-z_][A-Za-z0-9_-]*$/,
+                message: 'Use a simple field name (letters, numbers, underscore, hyphen)',
               },
             ]}
             tooltip="The field on this collection that will be queried with a LIKE/contains search."

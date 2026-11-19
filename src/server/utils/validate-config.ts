@@ -1,11 +1,11 @@
 import type { Database } from '@nocobase/database';
 
-const FIELD_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const FIELD_NAME_RE = /^[A-Za-z_][A-Za-z0-9_-]*$/;
 const COLLECTION_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 export function assertSafeSearchField(searchField: unknown) {
   if (typeof searchField !== 'string' || !FIELD_NAME_RE.test(searchField)) {
-    throw new Error('searchField must be a simple field name (letters, numbers, underscore)');
+    throw new Error('searchField must be a simple field name (letters, numbers, underscore, hyphen)');
   }
   if (searchField.startsWith('$')) {
     throw new Error('searchField must not be an operator');
