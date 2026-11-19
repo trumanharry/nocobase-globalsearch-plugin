@@ -2,7 +2,9 @@ import React from 'react';
 import { PinnedPluginListProvider, SchemaComponentOptions } from '@nocobase/client';
 import { GlobalSearchButton } from './components/GlobalSearchButton';
 
-export const GlobalSearchProvider: React.FC<{ children?: React.ReactNode }> = (props) => {
+// Match NocoBase plugin patterns (PinnedPluginListProvider renders children but its
+ // public type currently omits them, so keep this provider loosely typed).
+export const GlobalSearchProvider = (props: any) => {
   return (
     <PinnedPluginListProvider
       items={{
